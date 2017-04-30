@@ -15,8 +15,8 @@ function shopify_call($token, $shop, $api_endpoint, $query = array(), $method = 
 	// curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 3);
 	// curl_setopt($curl, CURLOPT_SSLVERSION, 3);
 	curl_setopt($curl, CURLOPT_USERAGENT, 'My New Shopify App v.1');
-	curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 30);
-	curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+	curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 0);
+	curl_setopt($curl, CURLOPT_TIMEOUT, 300);
 	curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
 
 	// Setup headers
