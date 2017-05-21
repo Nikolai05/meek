@@ -1,68 +1,42 @@
 <?php
-set_time_limit(3000);
+set_time_limit(9000);
 // Get our helper functions
 require_once("validate_url.php");
-//validate if the current order is made passed 12 hours
-function validate_order($date_param){
-	date_default_timezone_set('Europe/Vienna');
-	$timezone = date_default_timezone_get();
-	$date_now = date('Y-m-d H:i', time());
-	$date_order_created='';
-	$date_order_created=substr($date_param,0,10);
-	$time_order_created=substr($date_param,11,5);
-	$date_order_created=$date_order_created.' '.$time_order_created;
-	$seconds = strtotime($date_now) - strtotime($date_order_created);
-	$days    = floor($seconds / 86400);
-	$hours   = floor(($seconds - ($days * 86400)) / 3600);
-//	echo '<br><br>';
-//	echo $date_now.' '.$days.' day(s) has passed'.'<br>';
-//	echo $date_order_created.' '.$hours.' hours(s) has passed'.'<br>';
-	if($hours>12||$days>0){
-		return true;
-	}else{
-		return false;
-	}
-}
+require_once("validate_order.php");
+require_once("export_orders.php");
 
 
-// Set variables for our request
-$shop = "mymobile-gear";
-$token = "dec9d5a17c8bcbb34512d30400ef9f9d";
-$query = array(
-	"Content-type" => "application/json" // Tell Shopify that we're expecting an array response in JSON format
-);
-$order_list=array(); //array that will hold all order results
-$last_order_exported=5571251796; //this variable must be saved to database
 $order_list=array();
-$end_time=true;
-
-do{
-	$endpoint="/admin/orders.json?since_id=".$last_order_exported."&status=any&limit=1";
-	$orders = shopify_call($token, $shop, $endpoint, array(), 'GET');
-	$orders = json_decode($orders['response'], TRUE);
-	$end_time=validate_order($orders['orders'][0]['created_at']);
-
-			if($end_time==false){
-				break;
-			}else{
-				$order_list=array_merge($order_list,$orders['orders']);
-				$last_order_exported=$order_list[(sizeof($order_list)-1)]['id'];
-			}
-}while($end_time==true);
+$shop = array("gearforyou","mymobile-gear","kittenlovers","4xhome");
+$token = array("739b57687f7506165373e69d787bf054","dec9d5a17c8bcbb34512d30400ef9f9d","bbd49e53be300b236bf4bc6335a04d38","82f8ac6f768448a267e4a5464e4c1876");
+$last_order_exported=array(5621089351,5607854356,5593152647,5077732804); //this variable must be saved to database, indicates where should we start exporting
 
 
-for($count=0;$count<(sizeof($order_list));$count++){
-	if($order_list[$count]['financial_status']=='refunded'){
-		unset($order_list[$count]);
+for($arraycount=0;$arraycount<sizeof($shop);$arraycount++){
+	$order_list=array_merge($order_list,export_orders($shop[$arraycount],$token[$arraycount],$last_order_exported[$arraycount]));
+}
+
+for($counter=0;$counter<(sizeof($order_list));$counter++){
+	for($line_item_count=0;$line_item_count<sizeof($order_list[$counter]['line_items']);$line_item_count++){
+		echo $order_list[$counter]['order_number']." "
+				//.$order_list[$counter]['line_items'][$line_item_count]['quantity']." "
+			 //.$order_list[$counter]['line_items'][$line_item_count]['sku']." "
+				.$order_list[$counter]['shipping_address']['name']." "
+			//.$order_list[$counter]['shipping_address']['country']." "
+			//.$order_list[$counter]['shipping_address']['address1']." "
+			//.$order_list[$counter]['shipping_address']['address2']." "
+			//.$order_list[$counter]['shipping_address']['city']." "
+			//.$order_list[$counter]['shipping_address']['province']." "
+			//.$order_list[$counter]['shipping_address']['zip']." "
+			//.$order_list[$counter]['line_items'][$line_item_count]['title']." "
+			//.$order_list[$counter]['line_items'][$line_item_count]['vendor']." "
+			//.$order_list[$counter]['shipping_address']['phone']." "
+				.$order_list[$counter]['financial_status']." "
+				.$order_list[$counter]['fulfillment_status']." "
+				.'<br>';
 	}
 }
-$order_list=array_values($order_list);
-echo '<br>';
 
-for($count=0;$count<(sizeof($order_list));$count++){
-		echo $order_list[$count]['order_number']."     ".$order_list[$count]['shipping_address']['name']." ".$order_list[$count]['financial_status'].'<br>';
-}
 
-echo $last_order_exported;
 echo '<script>console.log('.json_encode($order_list).')</script>';
 ?>
