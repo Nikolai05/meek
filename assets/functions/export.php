@@ -3,40 +3,46 @@ set_time_limit(9000);
 // Get our helper functions
 require_once("validate_url.php");
 require_once("validate_order.php");
-require_once("export_orders.php");
+require_once("export_app_call.php");
+require_once("db_connect.php");
 
 
+$get_lastOrder_query = "SELECT StoreName, LastOrderExported, Token  FROM store";
+$query_result = $conn->query($get_lastOrder_query);
 $order_list=array();
-$shop = array("gearforyou","mymobile-gear","kittenlovers","4xhome");
-$token = array("739b57687f7506165373e69d787bf054","dec9d5a17c8bcbb34512d30400ef9f9d","bbd49e53be300b236bf4bc6335a04d38","82f8ac6f768448a267e4a5464e4c1876");
-$last_order_exported=array(5621089351,5607854356,5593152647,5077732804); //this variable must be saved to database, indicates where should we start exporting
 
-
-for($arraycount=0;$arraycount<sizeof($shop);$arraycount++){
-	$order_list=array_merge($order_list,export_orders($shop[$arraycount],$token[$arraycount],$last_order_exported[$arraycount]));
-}
-
-for($counter=0;$counter<(sizeof($order_list));$counter++){
-	for($line_item_count=0;$line_item_count<sizeof($order_list[$counter]['line_items']);$line_item_count++){
-		echo $order_list[$counter]['order_number']." "
-				//.$order_list[$counter]['line_items'][$line_item_count]['quantity']." "
-			 //.$order_list[$counter]['line_items'][$line_item_count]['sku']." "
-				.$order_list[$counter]['shipping_address']['name']." "
-			//.$order_list[$counter]['shipping_address']['country']." "
-			//.$order_list[$counter]['shipping_address']['address1']." "
-			//.$order_list[$counter]['shipping_address']['address2']." "
-			//.$order_list[$counter]['shipping_address']['city']." "
-			//.$order_list[$counter]['shipping_address']['province']." "
-			//.$order_list[$counter]['shipping_address']['zip']." "
-			//.$order_list[$counter]['line_items'][$line_item_count]['title']." "
-			//.$order_list[$counter]['line_items'][$line_item_count]['vendor']." "
-			//.$order_list[$counter]['shipping_address']['phone']." "
-				.$order_list[$counter]['financial_status']." "
-				.$order_list[$counter]['fulfillment_status']." "
-				.'<br>';
-	}
+if ($query_result->num_rows > 0) {
+    while($row = $query_result->fetch_assoc()) {
+				  $order_list=array_merge($order_list,export_orders($row["StoreName"],$row["Token"],$row["LastOrderExported"]));
+          if($order_list!=NULL){
+            $last_order = $order_list[(sizeof($order_list)-1)]['id'];
+            $save_last_order_query = "UPDATE store SET LastOrderExported = $last_order WHERE StoreName ="."'".$row["StoreName"]."'";
+            if (mysqli_query($conn, $save_last_order_query)){}
+              else{
+                  echo "Error updating record: " . mysqli_error($conn)."<br>";
+                }
+            }
+    }
 }
 
 
+
+/*
+
+$query = "SELECT *
+FROM customer,lineitems, product, store, batch
+WHERE customer.OrderID = lineitems.OrderID AND product.Sku = lineitems.Sku AND customer.StoreName=store.StoreName AND lineitems.BatchID = batch.BatchID";
+$result = $conn->query($query);
+
+if ($result->num_rows > 0) {
+    // output data of each row
+    while($row = $result->fetch_assoc()) {
+        echo $row["OrderNumber"]." ".$row["CustName"]." ".$row["Sku"]." ".$row["Qty"]." ".$row["ProductName"]."<br>";
+    }
+} else {
+    echo "0 results";
+}
+$conn->close();
+*/
 echo '<script>console.log('.json_encode($order_list).')</script>';
 ?>
