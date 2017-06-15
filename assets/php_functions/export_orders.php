@@ -31,9 +31,11 @@ function export_order($shop,$token,$last_order_exported){
     $query_result = $conn->query($save_last_order_query);
     if (mysqli_query($conn, $save_last_order_query)){}
       else{
-          echo "Error updating record: " . mysqli_error($conn)."<br>";
+          echo "Error updating last order: " . mysqli_error($conn)."<br>";
         }
-
+    for($i=0;$i<sizeof($orders_on_store);$i++){
+      $orders_on_store[$i]['store']=$shop;
+    }
     return $orders_on_store;
 }
 
