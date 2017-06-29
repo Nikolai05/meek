@@ -37,4 +37,9 @@ FROM customer,lineitems, product, store, batch
 WHERE customer.OrderID = lineitems.OrderID AND product.Sku = lineitems.Sku AND customer.StoreName=store.StoreName AND lineitems.BatchID = batch.BatchID
 
 
+
+
+INSERT INTO lineitems (OrderID, OrderLineID, Qty, Sku, FulfillmentStatus, BatchID, Mark)
+VALUES ()
+
 ?>
